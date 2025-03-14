@@ -1,0 +1,7 @@
+train: /home/takudzwa/Documents/Projects/broiler_disease/detection/dataset/train/images
+val: /home/takudzwa/Documents/Projects/broiler_disease/detection/dataset/val/images
+test: /home/takudzwa/Documents/Projects/broiler_disease/detection/dataset/test/images  
+  
+nc: 3  
+names: ['Coccidiosis','Newcastle Disease','Healthy']
+          
