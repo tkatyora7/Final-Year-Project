@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../../../Projects/broiler_disease/hardware/esp32_control"
+		},
+		{
+			"name": "Broiler Disease Detection",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
