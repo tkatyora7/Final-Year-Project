@@ -3,17 +3,7 @@
 #include <WiFi.h>
 #include "fomo_model.h" 
 #include <ArduinoHttpClient.h>
-#include <TensorFlowLite.h>
 
-
-
-//SETTING VARIBALE FOR THE MODEL
-
-const int tensor_arena_size = 1024 * 4; 
-uint8_t tensor_arena[tensor_arena_size];
-tflite::MicroInterpreter* interpreter = nullptr;
-TfLiteTensor* input = nullptr;
-TfLiteTensor* output = nullptr;
 
 
 const char* ssid = "SKE-2030CLASS";
@@ -91,29 +81,7 @@ void setup() {
   ledcSetup(0, 50, 16); 
   ledcAttachPin(servoPin, 0); 
 
-  Serial.println("\nLoading TinyML Model...");
 
- 
-  static tflite::MicroOpResolver resolver;
-  resolver.AddBuiltin(tflite::BuiltinOperator_FULLY_CONNECTED);
-  resolver.AddBuiltin(tflite::BuiltinOperator_AVERAGE_POOL_2D);
-  resolver.AddBuiltin(tflite::BuiltinOperator_CONV_2D); 
-  resolver.AddBuiltin(tflite::BuiltinOperator_DEPTHWISE_CONV_2D); 
-  resolver.AddBuiltin(tflite::BuiltinOperator_RELU);
-  resolver.AddBuiltin(tflite::BuiltinOperator_SOFTMAX); 
- 
-
-   static tflite::MicroInterpreter static_interpreter(
-      model_data,
-      resolver,
-      tensor_arena,
-      tensor_arena_size,
-      nullptr);
-
-  if (static_interpreter.AllocateTensors() != kTfLiteOk) {
-    Serial.println("Failed to allocate tensors");
-    while (1);
-  }
 
   interpreter = &static_interpreter;
   input = interpreter->input(0);
