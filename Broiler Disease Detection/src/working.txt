@@ -1,0 +1,335 @@
+#include <Arduino.h>
+#include <DHT.h>
+#include <WiFi.h>
+#include <ArduinoHttpClient.h>
+#include <ArduinoJson.h> 
+#include "esp_system.h"
+#include <HTTPClient.h>
+#include <ESPmDNS.h>
+#include <ESP32Servo.h>
+
+#define DHTPIN 18
+#define DHTTYPE DHT22
+
+// MICROPHONE 
+
+#define SAMPLE_RATE 4000  
+#define RECORD_TIME 10   
+#define SAMPLE_BITS 16    
+#define BUFFER_SIZE (SAMPLE_RATE * RECORD_TIME * 2)
+
+uint8_t *audioBuffer = NULL;
+unsigned int audioBufferPos = 0;
+const unsigned long pingInterval = 30000;
+unsigned long lastPingTime = 0;
+
+// SERVO DEFINATION
+
+Servo myServo;
+const int servoPin = 15;
+int targetAngle = 0;
+unsigned long lastMoveTime = 0;
+const int moveInterval = 7000;
+
+
+
+//WIFI
+// const char* ssid = "SKE-2030CLASS";
+// const char* password = "takudzwa2000";
+const char* ssid = "Sachis";
+const char* password = "1234567890";
+const char* deviceName = "ESP32"; 
+
+const char* serverAddress = "paulkys.local:8000";
+const int serverPort = 8000;
+const char* apiPath = "/esp32-connect/fowlrun-conditions/";
+const char* serverUrl = "http://paulkys.local:8000/esp32-connect/api/device_ping/";  
+const char* secret_key = "xytm56shjn";
+WiFiClient wifiClient;
+HttpClient client = HttpClient(wifiClient, serverAddress, serverPort);
+
+
+// PIN DEFINED
+DHT dht(DHTPIN, DHTTYPE);
+const int soundAnalogPin = 34;
+const int ledPin = 25;
+const int ledOrangePin = 27;
+
+// FUNCTION DEFINED
+void sendDataToCloud(float temp, float hum);
+void recordAudio();
+void sendAudioToDjango();
+void sendPing();
+
+
+void connectToWiFi() {
+  
+  
+  Serial.println("Connecting to WiFi...");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 120) { // Try for 15 seconds
+    delay(1000);
+    Serial.print(".");
+    attempts++;
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("\nFailed to connect! Restarting...");
+    WiFi.disconnect(true); // Reboot if no connection
+  }
+
+  Serial.printf("\nConnected! IP: %s\n", WiFi.localIP().toString().c_str());
+}
+
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+  pinMode(ledOrangePin, OUTPUT);
+  connectToWiFi();
+
+  // SERVO
+  myServo.attach(servoPin, 1000, 2000);  
+  myServo.attach(servoPin); 
+
+  //  DHT22 INITIALIZATION
+  dht.begin();
+  
+if (psramFound()) {
+  Serial.println("✅ PSRAM is available!");
+} else {
+  Serial.println("❌ PSRAM not found. Using normal heap.");
+}
+  
+ // Allocate buffer in heap (standard RAM)
+  audioBuffer = (uint8_t *)malloc(BUFFER_SIZE);
+ 
+  if (audioBuffer == NULL) {
+    Serial.println("❌ Failed to allocate audio buffer! Not enough RAM.");
+    // while (1);  
+  }
+  
+  Serial.printf("✅ Audio buffer allocated (%d bytes)\n", BUFFER_SIZE);
+  Serial.printf("Free heap after allocation: %d bytes\n", ESP.getFreeHeap());
+
+}
+
+
+
+
+void loop() {
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi lost! Reconnecting...");
+    connectToWiFi();
+  }
+  unsigned long currentTime = millis();
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+
+  if (currentTime - lastPingTime >= pingInterval) {
+    sendPing();
+    lastPingTime = currentTime;
+  }
+
+  digitalWrite(ledPin, WiFi.status() == WL_CONNECTED);
+  digitalWrite(ledOrangePin, WiFi.status() != WL_CONNECTED);
+
+  if (isnan(temperature) || isnan(humidity)) {
+    Serial.println(F("DHT read failed."));
+    delay(2000);
+    return;
+  }
+  Serial.println(WiFi.localIP());
+  Serial.print(F("Temp: "));
+  Serial.print(temperature);
+  Serial.print(F(" *C, Hum: "));
+  Serial.print(humidity);
+  Serial.println(F(" %"));
+   Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
+  Serial.printf("Min free: %d\n", ESP.getMinFreeHeap());
+
+ if (millis() - lastMoveTime >= moveInterval) {
+    targetAngle = (targetAngle + 90) % 180; 
+    myServo.write(targetAngle);
+    Serial.printf("Moved to %d°\n", targetAngle);
+    lastMoveTime = millis();
+  }
+
+  sendDataToCloud(temperature, humidity);
+
+  
+  int soundValue = analogRead(soundAnalogPin);
+  Serial.print("Sound Level: ");
+  Serial.println(soundValue);
+
+  recordAudio();
+  sendAudioToDjango();
+  delay(100);
+
+  delay(3000);
+}
+
+
+// FUNCTION LOGIC
+
+void recordAudio() {
+
+  if (audioBuffer == NULL) return;  // Safety check
+  
+  memset(audioBuffer, 0, BUFFER_SIZE);  // Clear old data
+  unsigned int bufferPos = 0;
+
+  unsigned long start = millis();
+  while (millis() - start < RECORD_TIME * 1000 && bufferPos + 2 <= BUFFER_SIZE) {
+    int16_t sample = analogRead(34) - 2048;  // Read from analog mic
+    audioBuffer[bufferPos++] = sample & 0xFF;
+    audioBuffer[bufferPos++] = (sample >> 8) & 0xFF;
+    delayMicroseconds(1000000 / SAMPLE_RATE);
+  }
+  
+  if (bufferPos + 2 > BUFFER_SIZE) {
+    Serial.println("Audio buffer overflow");
+  }
+  Serial.printf("Recorded %d bytes | Free heap: %d\n", bufferPos, ESP.getFreeHeap());
+}
+
+void sendAudioToDjango() {
+  if (!WiFi.isConnected()) {
+    Serial.println("WiFi not connected In Audio Server");
+    Serial.println(WiFi.localIP());
+   
+  }
+  else{
+     Serial.println("WiFi connected in Audio Server");
+    Serial.println(WiFi.localIP());
+}
+
+   WiFiClient client;
+  if (client.connect("paulkys.local", 8000)) {  // Use mDNS or replace with IP
+    client.println("POST /esp32-connect/audio/upload/ HTTP/1.1");
+    client.println("Host: paulkys.local:8000");  // Match server address
+    client.println("Content-Type: application/octet-stream");
+    client.println("X-Secret-Key: " + String(secret_key));
+    client.println("Content-Length: " + String(BUFFER_SIZE));
+    client.println("Connection: close");
+    client.println();
+
+    client.write(audioBuffer, BUFFER_SIZE);  // Send entire buffer at once
+
+    while (client.connected()) {
+      String line = client.readStringUntil('\n');
+      if (line == "\r") break;
+    }
+    String response = client.readStringUntil('\n');
+    Serial.println("Server response: " + response);
+    client.stop();
+  } else {
+    Serial.println("Audio server connection failed");
+  }
+}
+
+
+
+void sendDataToCloud(float temperature, float humidity) {
+
+   if (!WiFi.isConnected()) {
+    Serial.println("WiFi not connected In Image Server");
+    Serial.println(WiFi.localIP());
+   
+  }
+  else{
+     Serial.println("WiFi connected in Image Server");
+    Serial.println(WiFi.localIP());
+} 
+ HTTPClient http;
+  http.begin(wifiClient, "http://paulkys.local:8000/esp32-connect/fowlrun-conditions/");
+ 
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("X-Secret-Key", secret_key);
+
+  StaticJsonDocument<200> doc;
+  doc["temperature"] = temperature;
+  doc["humidity"] = humidity;
+  String jsonData;
+  serializeJson(doc, jsonData);
+
+  int httpCode = http.POST(jsonData);
+  if (httpCode > 0) {
+    Serial.printf("Server response: %d\n%s\n", httpCode, http.getString().c_str());
+  } else {
+    Serial.printf("HTTP error: %s\n", http.errorToString(httpCode).c_str());
+  }
+  http.end();
+  // StaticJsonDocument<200> doc; 
+  // doc["temperature"] = temperature;
+  // doc["humidity"] = humidity;
+  // doc["secret_key"] = secret_key;
+
+
+  // String jsonData;
+  // serializeJson(doc, jsonData);
+
+
+  // Serial.print("Sending JSON ("); 
+  // Serial.print(jsonData.length()); 
+  // Serial.println(" bytes):");
+  // Serial.println(jsonData);
+
+  // WiFiClient client;
+  // if (client.connect(serverAddress, serverPort)) {
+  //   client.println("POST " + String(apiPath) + " HTTP/1.1");
+  //   client.println("Host: " + String(serverAddress));
+  //   client.println("Content-Type: application/json");
+  //   client.println("Connection: close");
+  //   client.print("Content-Length: ");
+  //   client.println(jsonData.length());
+  //   client.println();
+  //   client.print(jsonData);
+    
+   
+  //   while (client.connected()) {
+  //     String line = client.readStringUntil('\n');
+  //     if (line == "\r") break;  // Headers end
+  //   }
+  //   String response = client.readStringUntil('\n');
+  //   Serial.println("Server response: " + response);
+    
+  //   client.stop();
+  // } else {
+  //   Serial.println("Connection failed to Django server for images!");
+  // }
+}
+
+
+void sendPing() {
+  HTTPClient http;
+  
+  // Configure HTTP request
+  http.begin(serverUrl);
+  http.addHeader("Content-Type", "application/json");
+  
+  // Create JSON payload
+  StaticJsonDocument<200> doc;
+  doc["device_name"] = deviceName;
+  
+  String requestBody;
+  serializeJson(doc, requestBody);
+  
+  // Send POST request
+  int httpResponseCode = http.POST(requestBody);
+  
+  // Check response
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.println("HTTP Response code: " + String(httpResponseCode));
+    Serial.println("Response: " + response);
+  } else {
+    Serial.println("Error sending ping. HTTP Response code: " + String(httpResponseCode));
+  }
+  
+  http.end();
+}
