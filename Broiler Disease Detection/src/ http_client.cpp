@@ -28,7 +28,8 @@ void HttpClientWrapper::sendData(float temperature, float humidity) {
     // }
     http.end();
 }
-void HttpClientWrapper::sendAudioToServer() {
+// void HttpClientWrapper::sendAudioToServer() 
+void HTTPClient::sendAudioToServer( const String& prediction){
     uint8_t* buffer = Audio::getAudioBuffer();
     size_t size = Audio::getBufferSize();
 
@@ -44,8 +45,11 @@ void HttpClientWrapper::sendAudioToServer() {
     http.begin(client, "http://paulkys.local:8000/esp32-connect/audio/upload/");
     http.addHeader("Content-Type", "application/octet-stream");
     http.addHeader("X-Secret-Key", secret_key);
+    http.addHeader("X-Prediction", prediction);
+
     
     int httpResponseCode = http.POST(buffer, size);
+   
     
     if (httpResponseCode > 0) {
         String response = http.getString();

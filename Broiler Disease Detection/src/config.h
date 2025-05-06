@@ -9,8 +9,7 @@ extern const char* deviceName;
 // Server Configuration
 extern const char* serverAddress;
 extern const int serverPort;
-extern const char* apiPath;
-extern const char* serverUrl;  
+extern const char* apiPath; 
 extern const char* secret_key;
 
 // Pin Definitions

@@ -1,5 +1,9 @@
 #include "wifi_connection.h"
 
+#include <WiFi.h>
+#include "config.h"
+
+
 void WiFiConnection::connect() {
     Serial.println("Connecting to WiFi...");
     Serial.println(ssid);

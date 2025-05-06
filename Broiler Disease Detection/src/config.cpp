@@ -13,7 +13,6 @@ const char* deviceName = "ESP32";
 const char* serverAddress = "paulkys.local:8000";
 const int serverPort = 8000;
 const char* apiPath = "/esp32-connect/fowlrun-conditions/";
-const char* serverUrl = "http://paulkys.local:8000/esp32-connect/api/device_ping/";  
 const char* secret_key = "xytm56shjn";
 
 // Timing Configuration
