@@ -11,7 +11,7 @@ void WiFiConnection::connect() {
 
     int attempts = 0;
     while (WiFi.status() != WL_CONNECTED && attempts < 3) {
-        delay(1000);
+        delay(10000);
         Serial.print("IP Address");
         Serial.print(WiFi.localIP());
         attempts++;
@@ -31,7 +31,19 @@ bool WiFiConnection::isConnected() {
 
 void WiFiConnection::checkConnection() {
     if (!isConnected()) {
+        Serial.println("WIFI IS NOT CONNECTED ");
+        digitalWrite(ledOrangePin, 0);
+        digitalWrite(ledPin, 1);
+        Serial.println("WIFI IS NOT CONNECTED AND RED LED ON ");
+        Serial.println(WiFi.localIP());
         Serial.println("WiFi lost! Reconnecting...");
         connect();
+    }else{
+        Serial.println("WIFI IS CONNECTED ");
+        digitalWrite(ledPin, 0);
+        digitalWrite(ledOrangePin, 1);
+        Serial.println("WIFI IS CONNECTED AND GREEN LED ON ");
+        Serial.println(WiFi.localIP());
     }
 }
+

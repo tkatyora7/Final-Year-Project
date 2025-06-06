@@ -12,7 +12,7 @@ private:
 
 public:
     SIM800L_Manager(HardwareSerial& serial, int powerPin = -1)
-        : serial(serial), powerPin(powerPin), modem(serial) {} // Initialize modem with serial
+        : serial(serial), powerPin(powerPin), modem(serial) {} 
 
     bool begin();
     bool sendSMS(const char* number, const char* message);
