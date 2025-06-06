@@ -2,7 +2,7 @@
 #include "config.h"
 #include "wifi_connection.h"
 #include "dht_sensor.h"
-// #include "audio.h"
+#include "audio.h"
 #include "http_client.h"
 #include "sim800l.h"
 #include "servo.h"
@@ -18,7 +18,7 @@ SIM800L_Manager sim800(SerialSIM800, SIM800L_PWR_PIN);
 WiFiConnection wifi;
 DHTSensor dhtSensor;
 ServoMotor servo;
-// Audio microphone;
+Audio microphone;
 HttpClientWrapper httpClient;
 
 
@@ -68,28 +68,32 @@ void setup() {
     // }
     wifi.connect();
     dhtSensor.begin();
-    // microphone.begin();
+    microphone.begin();
     servo.begin();
 
-    // if (!microphone.begin()) {
-    //     Serial.println("Microphone initialization failed!");
-    // }
+    if (!microphone.begin()) {
+        Serial.println("Microphone initialization failed!");
+    }
 }
 
 void loop() {
    
+    // WIFI CONNECTION
     wifi.checkConnection();
-    unsigned long currentTime = millis();
-    float temperature = dhtSensor.readTemperature();
-    float humidity = dhtSensor.readHumidity();
-    
     digitalWrite(ledPin, !wifi.isConnected());
     digitalWrite(ledOrangePin, wifi.isConnected());
 
+    // 1.PING THE SERVER FOR INDICATING THE ESP32 IS CONECTED 
     if (currentTime - lastPingTime >= pingInterval) {
         httpClient.sendPing();
         lastPingTime = currentTime;
     }
+
+    // 2.FOWRUN CONDITIONS CAPTURE AND SEND
+    unsigned long currentTime = millis();
+    float temperature = dhtSensor.readTemperature();
+    float humidity = dhtSensor.readHumidity();
+    
     if (isTemperaturePaused && (currentTime - temperaturePauseStartTime >= sendConditionsInterval)) {
         
         temperatureSendCount = 0;
@@ -98,10 +102,8 @@ void loop() {
     }
 
     if (!isTemperaturePaused && temperatureSendCount < 3) {
-       
         float temperature = dhtSensor.readTemperature();
         float humidity = dhtSensor.readHumidity();
-
         if (isnan(temperature)) {
             Serial.println(F("DHT read failed."));
         } else {
@@ -111,12 +113,8 @@ void loop() {
             Serial.print(humidity);
             Serial.println(F(" %"));
 
-            Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
-            Serial.printf("Min free: %d\n", ESP.getMinFreeHeap());
-
             Serial.println("Sending data to Humidity Server");
             httpClient.sendData(temperature, humidity);
-
             temperatureSendCount++;
 
             if (temperatureSendCount == 3) {
@@ -126,6 +124,24 @@ void loop() {
             }
         }
     }
+    // 3.SOUND MODULE
+    static unsigned long lastRecord = 0;
+
+    if (millis() - lastRecord >= 60000) {
+        Serial.println("Starting recording...");
+        microphone.record();
+        
+        uint8_t* buf = microphone.getAudioBuffer();
+        for (int i=0; i<20; i+=2) { 
+            int16_t sample = buf[i] | (buf[i+1] << 8);
+            Serial.printf("%d ", sample);
+        }
+        Serial.println();
+        
+        lastRecord = millis();
+    }
+
+    // 4. SERVOR MOTOT 
      Serial.println("Start Servor.");
      servo.update();
 
@@ -146,5 +162,7 @@ void loop() {
      //         lastSendTime = millis();
      //     }
      // }
+      Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
+    Serial.printf("Min free: %d\n", ESP.getMinFreeHeap());
      delay(9000);
 }

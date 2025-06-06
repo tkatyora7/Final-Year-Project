@@ -1,24 +1,23 @@
-// #ifndef AUDIO_H
-// #define AUDIO_H
+#ifndef AUDIO_H
+#define AUDIO_H
 
-// #include "config.h"
-// #include <Arduino.h>
+#include "config.h"
+#include <Arduino.h>
 
-// class Audio {
-// private:
-//     static constexpr size_t SAMPLE_WINDOW = 5000; 
-//     bool _initialized = false;
+class Audio {
+private:
+    static uint8_t* audioBuffer;
+    static constexpr size_t BUFFER_SIZE = 40000;
+    bool _initialized = false;
 
-// public:
-//     bool begin();
-//     void record();
+public:
+    bool begin(); 
+    void record();
+    bool isInitialized() const { return _initialized; }
     
-    
-//     float getCurrentIntensity(); 
-//     int getTriggerEvents();
-//     float getDutyCycle();
-    
-//     bool isInitialized() const { return _initialized; }
-// };
 
-// #endif
+    static uint8_t* getAudioBuffer() { return audioBuffer; }
+    static size_t getBufferSize() { return BUFFER_SIZE; }
+};
+
+#endif

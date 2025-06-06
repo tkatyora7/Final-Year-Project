@@ -1,57 +1,54 @@
-// #include "audio.h"
-// #include "config.h"
+#include "audio.h"
+#include "config.h"
 
-// static unsigned long triggerCount = 0;
-// static unsigned long activeDuration = 0;
-// static unsigned long lastTriggerTime = 0;
+uint8_t* Audio::audioBuffer = nullptr;
 
-// bool Audio::begin() {
-//     pinMode(soundAnalogPin, INPUT);
-//     pinMode(soundDigitalPin, INPUT); 
+bool Audio::begin() {
+    if (_initialized) return true;
+
+   
+    audioBuffer = (uint8_t*)malloc(BUFFER_SIZE);
+    if (!audioBuffer) {
+        Serial.println("Failed to allocate audio buffer");
+        return false;
+    }
+
+    analogReadResolution(12);
+    analogSetAttenuation(soundAnalogPin, ADC_11db);
     
-//     analogReadResolution(12);
-//     analogSetPinAttenuation(soundAnalogPin, ADC_11db);
+    _initialized = true;
+    Serial.println("Audio ready for recording");
+    return true;
+}
+
+void Audio::record() {
+    if (!_initialized || !audioBuffer) {
+        Serial.println("Call begin() first");
+        return;
+    }
+
+    const unsigned long duration = 5000; // 5-second recording
+    const unsigned int interval = 1000000 / 8000; // 8kHz sample rate
     
-//     Serial.println("Sound module initialized (LM393 mode)");
-//     _initialized = true;
-//     return true;
-// }
-
-// void Audio::record() {
-//     static unsigned long windowStart = millis();
-//     unsigned long now = millis();
+    memset(audioBuffer, 0, BUFFER_SIZE);
     
-//     // Reset counters every SAMPLE_WINDOW milliseconds
-//     if(now - windowStart >= SAMPLE_WINDOW) {
-//         windowStart = now;
-//         triggerCount = 0;
-//         activeDuration = 0;
-//     }
+    unsigned long start = millis();
+    unsigned long lastSample = micros();
+    unsigned samplesRecorded = 0;
 
-//     // Analog intensity monitoring
-//     int rawValue = analogRead(soundAnalogPin);
-    
-//     // Digital trigger counting
-//     if(digitalRead(soundDigitalPin) == HIGH) {
-//         triggerCount++;
-//         if(lastTriggerTime == 0) lastTriggerTime = now;
-//     } else {
-//         if(lastTriggerTime != 0) {
-//             activeDuration += now - lastTriggerTime;
-//             lastTriggerTime = 0;
-//         }
-//     }
-// }
+    while ((millis() - start < duration) && 
+           (samplesRecorded < BUFFER_SIZE/2)) {
+        
+        if (micros() - lastSample >= interval) {
+            int16_t sample = analogRead(soundAnalogPin) - 2048; // Center at 0
+            audioBuffer[samplesRecorded*2] = sample & 0xFF;
+            audioBuffer[samplesRecorded*2 + 1] = (sample >> 8) & 0xFF;
+            
+            samplesRecorded++;
+            lastSample += interval;
+        }
+        delayMicroseconds(10);
+    }
 
-// // New metric functions
-// float Audio::getCurrentIntensity() {
-//     return analogRead(soundAnalogPin) / 4095.0; // Normalized 0-1
-// }
-
-// int Audio::getTriggerEvents() {
-//     return triggerCount; // Reset after each HTTP send
-// }
-
-// float Audio::getDutyCycle() {
-//     return (activeDuration * 100.0) / SAMPLE_WINDOW; // Percentage
-// }
+    Serial.printf("Recorded %u samples\n", samplesRecorded);
+}
