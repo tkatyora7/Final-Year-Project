@@ -9,7 +9,9 @@ class HttpClientWrapper {
 public:
     void sendData(float temperature, float humidity);
     void sendPing();
-// void sendAudioToServer();
+    void sendSoundAnalysis(int soundCount, const String& soundStatus, const String& riskLevel, bool prolongedSilence,float humidity,float temperature);
+    
+    // void sendAudioToServer();
     // void sendAudioToServer(const String& prediction);
 };
 

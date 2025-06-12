@@ -32,16 +32,16 @@ bool WiFiConnection::isConnected() {
 void WiFiConnection::checkConnection() {
     if (!isConnected()) {
         Serial.println("WIFI IS NOT CONNECTED ");
-        digitalWrite(ledOrangePin, 0);
-        digitalWrite(ledPin, 1);
+        digitalWrite(ledGreenPin, 0);
+        digitalWrite(ledRedPin, 1);
         Serial.println("WIFI IS NOT CONNECTED AND RED LED ON ");
         Serial.println(WiFi.localIP());
         Serial.println("WiFi lost! Reconnecting...");
         connect();
     }else{
         Serial.println("WIFI IS CONNECTED ");
-        digitalWrite(ledPin, 0);
-        digitalWrite(ledOrangePin, 1);
+        digitalWrite(ledRedPin, 0);
+        digitalWrite(ledGreenPin, 1);
         Serial.println("WIFI IS CONNECTED AND GREEN LED ON ");
         Serial.println(WiFi.localIP());
     }

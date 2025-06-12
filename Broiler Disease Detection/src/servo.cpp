@@ -9,16 +9,13 @@ void ServoMotor::begin() {
     
     myServo.setPeriodHertz(50);
     myServo.attach(SERVO_PIN, 500, 2400);
-    myServo.write(0); 
+    myServo.write(100); 
     lastMoveTime = millis(); 
 }
 
 void ServoMotor::update() {
     if (millis() - lastMoveTime >= moveDelay) {
-        
         currentPositionIndex++;
-        
-        
         if (currentPositionIndex >= sizeof(positions)/sizeof(positions[0])) {
             currentPositionIndex = 0;
         }
@@ -31,3 +28,8 @@ void ServoMotor::update() {
 void ServoMotor::moveToPosition(int pos) {
     myServo.write(pos);
 }
+
+
+
+
+

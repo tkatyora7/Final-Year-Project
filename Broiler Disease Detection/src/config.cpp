@@ -1,7 +1,7 @@
 #include "config.h"
 
 // WiFi Configuration
-// const char* ssid = "Sachis";
+// const char* ssid = "Gire";
 // const char* password = "1234567890";
 
 const char* ssid = "SKE-2030CLASS";
@@ -16,6 +16,6 @@ const char* apiPath = "/esp32-connect/fowlrun-conditions/";
 const char* secret_key = "xytm56shjn";
 
 // Timing Configuration
-const unsigned long pingInterval = 180000; // 1 Minute
-const unsigned long sendConditionsInterval = 30 * 1000;
+const unsigned long pingInterval = 2 * 60 * 1000; // 2 Minute
+const unsigned long sendConditionsInterval =  2 * 60 * 1000; // 2 Minute
 const int moveInterval = 7000;

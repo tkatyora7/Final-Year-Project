@@ -1,9 +1,10 @@
 #include "sim800l.h"
 
 
+
 bool SIM800L_Manager::begin()
 {
-    serial.begin(115200, SERIAL_8N1, 16, 17);
+    serial.begin(9600, SERIAL_8N1, 16, 17);
 
     if (powerPin != -1) {
         pinMode(powerPin, OUTPUT);
@@ -127,3 +128,8 @@ void SIM800L_Manager::powerCycle() {
     digitalWrite(powerPin, HIGH);
     delay(2000);
 }
+
+
+
+
+

@@ -26,41 +26,42 @@ void HttpClientWrapper::sendData(float temperature, float humidity) {
     } 
     http.end();
 }
-// void HttpClientWrapper::sendAudioToServer() {
-// // void HTTPClient::sendAudioToServer( const String& prediction){
-//     uint8_t* buffer = Audio::getAudioBuffer();
-//     size_t size = Audio::getBufferSize();
+ 
+void HttpClientWrapper::sendSoundAnalysis(int soundCount, const String& soundStatus, const String& riskLevel, bool prolongedSilence,float humidity, float temperature) {
+    HTTPClient http;
+    WiFiClient client;
 
-    
-//     if (buffer == nullptr || size == 0) {
-//         Serial.println("Error: Audio buffer not initialized or empty");
-//         return;
-//     }
+    http.begin(client, "http://paulkys.local:8000/esp32-connect/audio/analysis/");
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("X-Secret-Key", secret_key);  
 
-//     HTTPClient http;
-//     WiFiClient client;
-    
-//     http.begin(client, "http://paulkys.local:8000/esp32-connect/audio/upload/");
-//     http.addHeader("Content-Type", "application/octet-stream");
-//     http.addHeader("X-Secret-Key", secret_key);
-//     // http.addHeader("X-Prediction", prediction);
+    JsonDocument doc;
+    doc["sound_count"] = soundCount;
+    doc["sound_status"] = soundStatus;
+    doc["risk_level"] = riskLevel;
+    doc["prolong_silence"] = prolongedSilence;
+    doc["temperature"] = temperature;
+    doc["humidity"] = humidity;
 
-    
-//     int httpResponseCode = http.POST(buffer, size);
-   
-    
-//     if (httpResponseCode > 0) {
-//         String response = http.getString();
-//         Serial.print("Server response code: ");
-//         Serial.println(httpResponseCode);
-//         Serial.print("Response: ");
-//         Serial.println(response);
-//     } else {
-//         Serial.print("Error code: ");
-//         Serial.println(httpResponseCode);
-//     }
-//     http.end();
-// }
+    String payload;
+    serializeJson(doc, payload);
+
+    int httpResponseCode = http.POST(payload);
+
+    if (httpResponseCode > 0) {
+        String response = http.getString();
+        Serial.print("Server response code: ");
+        Serial.println(httpResponseCode);
+        Serial.print("Response: ");
+        Serial.println(response);
+    } else {
+        Serial.print("Error sending analysis: ");
+        Serial.println(httpResponseCode);
+    }
+
+    http.end();
+}
+
 
 
 

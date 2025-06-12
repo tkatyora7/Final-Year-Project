@@ -1,0 +1,388 @@
+#include <Arduino.h>
+#include <esp_camera.h>
+#include <WiFi.h>
+#include <ESP32Servo.h>
+#include <HTTPClient.h>
+#include <base64.h>
+#include <ArduinoJson.h>
+//#include "broiler_disease_esp32_model.h"  
+//#include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
+//#include "tensorflow/lite/micro/micro_interpreter.h"
+//#include "tensorflow/lite/micro/system_setup.h"
+//#include "tensorflow/lite/schema/schema_generated.h"
+//#include "tensorflow/lite/micro/micro_log.h" 
+
+
+//----------------------------------------------------------CONFIGURATIONS-----------------------------------
+
+// CAMERA CONFIGURATIONS
+#define PWDN_GPIO_NUM     32
+#define RESET_GPIO_NUM    -1
+#define XCLK_GPIO_NUM      0
+#define SIOD_GPIO_NUM     26
+#define SIOC_GPIO_NUM     27
+#define Y9_GPIO_NUM       35
+#define Y8_GPIO_NUM       34
+#define Y7_GPIO_NUM       39
+#define Y6_GPIO_NUM       36
+#define Y5_GPIO_NUM       21
+#define Y4_GPIO_NUM       19
+#define Y3_GPIO_NUM       18
+#define Y2_GPIO_NUM        5
+#define VSYNC_GPIO_NUM    25
+#define HREF_GPIO_NUM     23
+#define PCLK_GPIO_NUM     22
+
+// CAMERA CAPTURING 
+int currentPosition = 0;
+bool isCapturing = false;
+camera_fb_t* capturedImages[3] = {nullptr, nullptr, nullptr};
+
+//SERVOR MOTOR
+Servo myServo;
+
+// WIFI CONNECTIVITY
+const char* ssid = "SKE-2030CLASS";
+const char* password = "takudzwa2001";
+
+// DEVICE INFORMATION
+const char* deviceName = "ESP32_CAM"; 
+
+// Server configuration
+const char* serverUrl = "http://paulkys.local:8000/esp32-connect/fowlrun-image/";
+const char* secretKey = "xytm56shjn";
+
+// Timing configuration
+unsigned long lastCaptureTime = 0;
+unsigned long lastPingTime = 0;
+const unsigned long pingInterval = 3 * 60 * 1000;
+
+
+const int servoPositions[] = {0, 90, 180};
+const int servoDelay =  200; 
+const int captureDelay = 1 * 1000; 
+const unsigned long captureCycleInterval = 5 * 1000; 
+unsigned long lastCaptureCycleEndTime = 0;
+bool isCaptureCycleActive = false;
+
+
+
+// FUNCTIONS DEFINE
+
+void sendPing();
+void sendImageToDjango(camera_fb_t* fb);
+
+#define RXD2 14 
+#define TXD2 25 
+HardwareSerial SerialPort(2);
+
+
+
+
+
+//------------------------------------------SETUP CODE -------------------------------------------------
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("\n\nESP32-CAM Broiler Disease Detection");
+  Serial.println("Checking Spram Fifrst before anything ......");
+  if (!psramFound()) {
+    Serial.println("❌ PSRAM not found");
+  } else {
+    Serial.println("✅ PSRAM found and enabled");
+    Serial.printf("Free PSRAM: %d bytes\n", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+  }
+//  setupTFModel();
+
+
+  // Camera configuration
+  camera_config_t config;
+  config.ledc_channel = LEDC_CHANNEL_0;
+  config.ledc_timer = LEDC_TIMER_0;
+  config.pin_d0 = Y2_GPIO_NUM;
+  config.pin_d1 = Y3_GPIO_NUM;
+  config.pin_d2 = Y4_GPIO_NUM;
+  config.pin_d3 = Y5_GPIO_NUM;
+  config.pin_d4 = Y6_GPIO_NUM;
+  config.pin_d5 = Y7_GPIO_NUM;
+  config.pin_d6 = Y8_GPIO_NUM;
+  config.pin_d7 = Y9_GPIO_NUM;
+  config.pin_xclk = XCLK_GPIO_NUM;
+  config.pin_pclk = PCLK_GPIO_NUM;
+  config.pin_vsync = VSYNC_GPIO_NUM;
+  config.pin_href = HREF_GPIO_NUM;
+  config.pin_sccb_sda = SIOD_GPIO_NUM;
+  config.pin_sccb_scl = SIOC_GPIO_NUM;
+  config.pin_pwdn = PWDN_GPIO_NUM;
+  config.pin_reset = RESET_GPIO_NUM;
+  config.xclk_freq_hz = 20000000;
+  config.pixel_format = PIXFORMAT_JPEG; 
+ config.frame_size = FRAMESIZE_SVGA;  
+  config.jpeg_quality = 10;           
+  config.fb_count = 1;
+
+
+  esp_err_t err = esp_camera_init(&config);
+  if (err != ESP_OK) {
+    Serial.printf("Camera init failed with error 0x%x\n", err);
+    if (err == ESP_ERR_CAMERA_NOT_DETECTED) {
+      Serial.println("Camera not detected! Check wiring.");
+    }
+    ESP.restart();
+  }
+
+  sensor_t *s = esp_camera_sensor_get();
+  if (s != nullptr) {
+    s->set_vflip(s, 1);
+    s->set_hmirror(s, 1);
+  }
+    
+   Serial.println("ESP32-CAM ready.");
+
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi...");
+  
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    delay(500);
+    Serial.print(".");
+    attempts++;
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nWiFi connected");
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+    sendPing();
+    lastPingTime = millis();
+  } else {
+    Serial.println("\nFailed to connect to WiFi");
+  }
+  Serial.printf("Free Memory: %d bytes\n", esp_get_free_heap_size());
+
+
+  // servo motor 
+   myServo.setPeriodHertz(50);   
+  myServo.attach(4, 500, 2500);
+
+  Serial.println("Servo attached to GPIO 4.");
+  myServo.write(0); 
+  delay(500);
+
+  printMemoryInfo();
+
+}
+//------------------------------------------------LOOP ------------------------------------------------
+void loop() {
+  unsigned long currentTime = millis();
+
+  if (currentTime - lastPingTime >= pingInterval) {
+     Serial.println("Sending PIng.");
+    sendPing();
+    lastPingTime = currentTime;
+  }
+  
+ if (!isCaptureCycleActive && (currentTime - lastCaptureCycleEndTime >= captureCycleInterval || lastCaptureCycleEndTime == 0)) {
+    Serial.println("Starting new capture cycle...");
+    
+    isCaptureCycleActive = true;
+    currentPosition = 0; 
+    lastCaptureTime = currentTime; 
+    captureImage();
+  }
+  
+  else if (isCaptureCycleActive && currentTime - lastCaptureTime >= captureDelay && currentPosition < 3) {
+    captureImage();
+  }
+  
+  else if (isCaptureCycleActive && currentPosition >= 3) {
+    Serial.println("Capture cycle complete.");
+    
+    isCaptureCycleActive = false; 
+    lastCaptureCycleEndTime = currentTime; 
+    Serial.println("Moving back to Position 0.");
+//    myServo.write(0);
+    // processAndSendImages(); 
+  }
+ 
+  
+  delay(10);
+}
+
+
+void captureImage() {
+    int targetPos = servoPositions[currentPosition];
+    Serial.printf("Moving servo to position %d degrees\n", targetPos);
+    myServo.write(targetPos);
+    delay(servoDelay);
+    Serial.printf(" At position %d degrees Capturing image... \n", targetPos);
+    camera_fb_t *fb = esp_camera_fb_get();
+    
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.print("Sendig to Django");
+        sendImageToDjango(fb);
+    }
+    esp_camera_fb_return(fb);
+    if (fb) {
+        capturedImages[currentPosition] = fb;
+        Serial.printf("Captured image %d size: %u bytes\n", currentPosition, fb->len);
+        currentPosition++;
+        lastCaptureTime = millis();
+    } else {
+        Serial.println("Camera capture failed");
+         SerialPort.println("CAPTURE_FAILED");
+        isCaptureCycleActive = false; 
+    }
+}
+
+
+void printMemoryInfo() {
+  Serial.println("===== MEMORY INFO =====");
+
+  // DRAM - main heap
+  Serial.printf("Free DRAM (heap): %d bytes\n", heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
+
+  // PSRAM - external SPI RAM
+  if (psramFound()) {
+    Serial.printf("Free PSRAM (SPIRAM): %d bytes\n", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+    Serial.printf("Total PSRAM: %d bytes\n", ESP.getPsramSize());
+  } else {
+    Serial.println("PSRAM not found.");
+  }
+
+  // IRAM - fast instruction RAM
+  Serial.printf("Free IRAM: %d bytes\n", heap_caps_get_free_size(MALLOC_CAP_EXEC));
+
+  // Flash info (Arduino-friendly)
+  uint32_t flash_size = ESP.getFlashChipSize();
+  Serial.printf("Total Flash Size: %d bytes (%.2f MB)\n", flash_size, flash_size / (1024.0 * 1024));
+  Serial.printf("Sketch Size: %u bytes\n", ESP.getSketchSize());
+  Serial.printf("Free Flash Space: %u bytes\n", ESP.getFreeSketchSpace());
+
+  Serial.println("========================");
+}
+
+const char* CLASS_NAMES[] = {"cocci", "healthy", "ncd"};
+
+
+ //--------------------------------------------------------------SEND PING------------------------------
+void sendPing() {
+  if (!WiFi.isConnected()) {
+    Serial.println("Cannot send ping - WiFi not connected");
+    return;
+  }
+
+  WiFiClient wifiClient;
+  HTTPClient http;
+  
+  if (!http.begin(wifiClient, "http://paulkys.local:8000/esp32-connect/api/device_ping/")) {
+    Serial.println("Failed to begin ping HTTP connection");
+    return;
+  }
+  
+  http.addHeader("Content-Type", "application/json");
+  
+  DynamicJsonDocument doc(10 * 1024);
+  doc["device_name"] = deviceName;
+  
+  String requestBody;
+  serializeJson(doc, requestBody);
+  
+  int httpResponseCode = http.POST(requestBody);
+  
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.println("Ping response: " + response);
+  } else {
+    Serial.printf("Error sending ping. HTTP Response code: %d\n", httpResponseCode);
+  }
+  http.end();
+  
+}
+//-----------------------------------------------PREDICTION AND SENDING IMAGES --------------------
+
+void processAndSendImages() {
+  Serial.println("Processing and sending all captured images...");
+  
+  for (int i = 0; i < 3; i++) {
+    if (capturedImages[i] != nullptr) {
+//        preprocessImage(capturedImages[i], input);
+//      TfLiteStatus invoke_status = interpreter->Invoke();
+      
+//      if (invoke_status != kTfLiteOk) {
+//        Serial.println("Invoke failed");
+//      } else {
+//        processOutput(output);
+//      }
+      
+      if (WiFi.status() == WL_CONNECTED) {
+        sendImageToDjango(capturedImages[i]);
+      }
+      
+//      sendPredictionToESP32();
+      
+      esp_camera_fb_return(capturedImages[i]);
+      capturedImages[i] = nullptr;
+    }
+  }
+  
+  Serial.println("All images processed and sent");
+}
+
+
+
+//---------------------------------------2. SENDTO DJANGO ------------------------------------------
+
+void sendImageToDjango(camera_fb_t*fb) {
+  if (!WiFi.isConnected()) {
+    Serial.println("WiFi not connected");
+    return;
+  }
+
+  HTTPClient http;
+  if (!http.begin(serverUrl)) {
+    Serial.println("Failed to begin HTTP connection");
+    return;
+  }
+  
+  http.addHeader("Content-Type", "application/json");
+
+  DynamicJsonDocument doc(10 * 1024);
+  if (doc.capacity() == 0) {
+    Serial.println("Failed to allocate memory for JSON document");
+    return;
+  }
+
+  doc["image"] = base64::encode(fb->buf, fb->len);  
+  doc["width"] = fb->width;
+  doc["height"] = fb->height;
+  doc["secret_key"] = secretKey;
+
+//  if (output != nullptr) {
+//    JsonArray predictions = doc.createNestedArray("predictions");
+//    for (int i = 0; i < output->dims->data[1]; i++) {
+//      JsonObject pred = predictions.createNestedObject();
+//      pred["class"] = CLASS_NAMES[i];
+//      pred["score"] = output->data.f[i];
+//    }
+//  }
+
+  String jsonData;
+  serializeJson(doc, jsonData);
+
+  int httpCode = http.POST(jsonData);
+  
+  if (httpCode == HTTP_CODE_OK) {
+    String response = http.getString();
+    Serial.println("Server response: " + response);
+  } else {
+    Serial.printf("Error code: %d\n", httpCode);
+    if (httpCode > 0) {
+      String response = http.getString();
+      Serial.println("Error response: " + response);
+    }
+  }
+  
+  http.end();
+}

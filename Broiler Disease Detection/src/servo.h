@@ -10,13 +10,13 @@ public:
     void update();  
     
     unsigned long lastMoveTime = 0;
-    const unsigned long moveDelay = 5 * 1000;
+    const unsigned long moveDelay = 15 * 1000;
     
 private:
     void moveToPosition(int pos);
     
     Servo myServo;
-    const int positions[4] = {0, 90, 180, 0}; 
+    const int positions[7] = {100,150,170,150,100,75,50}; 
     int currentPositionIndex = 0;
     bool isMovingForward = true;
 };

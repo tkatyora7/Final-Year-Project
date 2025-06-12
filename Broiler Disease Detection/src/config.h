@@ -13,23 +13,27 @@ extern const char* apiPath;
 extern const char* secret_key;
 
 // Pin Definitions
-#define DHTPIN 18
-#define DHTTYPE DHT22
-#define soundAnalogPin 34
-#define ledPin 21
-#define ledOrangePin 23
-#define SERVO_PIN 5
+#define DHTPIN 18              
+#define DHTTYPE DHT22          
+#define soundAnalogPin 34      
+#define ledRedPin 21          
+#define ledGreenPin 23  
+#define flashledPin 32      
+#define SERVO_PIN 5     
 
-// Audio Configuration
-#define SAMPLE_RATE 4000  
-#define RECORD_TIME 5  
-#define SAMPLE_BITS 16    
-#define AUDIO_BUFFER_SIZE (SAMPLE_RATE * RECORD_TIME * 2)
+// UART for GSM
+#define GSM_RX 16                // ESP32 receives from GSM
+#define GSM_TX 17                // ESP32 sends to GSM
+
+// UART for ESP32-CAM
+#define CAM_RX 19                 // ESP32 receives from camera
+#define CAM_TX 32
 
 
 
 // Timing Configuration
 extern const unsigned long pingInterval;
+extern const unsigned long sendInterval;
 extern const unsigned long sendConditionsInterval;
 extern const unsigned long noResponseInterval;
 extern const int moveInterval;
