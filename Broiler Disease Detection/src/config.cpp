@@ -1,12 +1,10 @@
 #include "config.h"
 
 // WiFi Configuration
-// const char* ssid = "Gire";
-// const char* password = "1234567890";
+const char* ssid ="KATYORA.";
+const char* password = "takudzwa2000";
 
-const char* ssid = "SKE-2030CLASS";
-const char* password = "takudzwa2001";
-
+// const char* ssid ="TELONE-FREE";
 const char* deviceName = "ESP32"; 
 
 // Server Configuration
@@ -16,6 +14,6 @@ const char* apiPath = "/esp32-connect/fowlrun-conditions/";
 const char* secret_key = "xytm56shjn";
 
 // Timing Configuration
-const unsigned long pingInterval = 2 * 60 * 1000; // 2 Minute
-const unsigned long sendConditionsInterval =  2 * 60 * 1000; // 2 Minute
+const unsigned long pingInterval = 20 * 1000; // 20 seconds
+const unsigned long sendConditionsInterval =  20 * 1000; // 2 20 secods
 const int moveInterval = 7000;

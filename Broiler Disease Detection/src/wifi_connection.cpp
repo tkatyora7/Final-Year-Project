@@ -8,6 +8,7 @@ void WiFiConnection::connect() {
     Serial.println("Connecting to WiFi...");
     Serial.println(ssid);
     WiFi.begin(ssid, password);
+    //  WiFi.begin(ssid);
 
     int attempts = 0;
     while (WiFi.status() != WL_CONNECTED && attempts < 3) {

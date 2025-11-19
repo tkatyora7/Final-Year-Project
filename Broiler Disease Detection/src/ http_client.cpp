@@ -4,7 +4,7 @@
 #include <HTTPClient.h>
 
 
-void HttpClientWrapper::sendData(float temperature, float humidity) {
+void HttpClientWrapper::sendData(float temperature, float temp2, float humidity,float hum2) {
 
     WiFiClient wifiClient;
     HTTPClient http;
@@ -15,6 +15,8 @@ void HttpClientWrapper::sendData(float temperature, float humidity) {
     JsonDocument doc;  
     doc["temperature"] = temperature;
     doc["humidity"] = humidity;
+     doc["temp2"] = temp2;
+    doc["hum2"] = hum2;
     doc["secret_key"] = secret_key;
     
     String jsonData;

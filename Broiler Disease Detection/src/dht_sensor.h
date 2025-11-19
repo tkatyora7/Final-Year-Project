@@ -8,7 +8,8 @@ class DHTSensor {
 private:
     DHT dht;
 public:
-    DHTSensor() : dht(DHTPIN, DHTTYPE) {}
+ 
+    DHTSensor(int pin) : dht(pin, DHTTYPE) {}
     void begin();
     float readTemperature();
     float readHumidity();
