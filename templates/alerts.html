@@ -1,0 +1,160 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Active Alert</h3>
+            <div class="grid grid-cols-2 gap-4">
+                    {% if  alert.is_health == False %}
+                        {% if alert.detection == 'cocci' %}
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <p class="text-sm text-red-600">Coccidiosis</p>
+                                <p class="text-2xl font-bold text-red-700">{{ alert.probability }}%</p>
+                                <p class="text-sm text-gray-600">Detected via: {{ alert.detection_method }}</p>
+                                <p class="text-xs text-gray-500">Fowl Run: {{ alert.get_fowlrun_display }}</p>
+                                 <p class="text-sm text-blue-800">{{ alert.diagnosis }}</p>
+                                <p class="text-xs font-bold text-red-700">Raised at: {{ alert.timestamp }}</p>
+                            </div>
+                        {% elif alert.detection == 'ncd' %}
+                            <div class="bg-orange-50 p-4 rounded-lg">
+                                <p class="text-sm text-orange-600">Newcastle Disease</p>
+                                <p class="text-2xl font-bold text-orange-700">{{ alert.probability }}%</p>
+                                <p class="text-sm text-gray-600">Detected via: {{ alert.detection_method }}</p>
+                                <p class="text-xs text-gray-500">Fowl Run: {{ alert.get_fowlrun_display }}</p>
+                                <p class="text-sm text-blue-800">{{ alert.diagnosis }}</p>
+                                 <p class="text-xs font-bold text-red-700">Raised at: {{ alert.timestamp }}</p>
+                            </div>
+                         {% elif alert.detection == 'uncertain_ncd' %}
+                            <div class="bg-orange-50 p-4 rounded-lg">
+                                <p class="text-sm text-orange-600">Newcastle Disease</p>
+                                <p class="text-2xl font-bold text-orange-700">{{ alert.probability }}%</p>
+                                <p class="text-sm text-gray-600">Detected via: {{ alert.detection_method }}</p>
+                                <p class="text-xs text-gray-500">Fowl Run: {{ alert.get_fowlrun_display }}</p>
+                                <p class="text-sm text-blue-800">{{ alert.diagnosis }}</p>
+                                 <p class="text-xs font-bold text-red-700">Raised at: {{ alert.timestamp }}</p>
+                            </div>
+                         {% elif alert.detection == 'uncertain_cocci' %}
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <p class="text-sm text-red-600">Coccidiosis</p>
+                                <p class="text-2xl font-bold text-red-700">{{ alert.probability }}%</p>
+                                <p class="text-sm text-gray-600">Detected via: {{ alert.detection_method }}</p>
+                                <p class="text-xs text-gray-500">Fowl Run: {{ alert.get_fowlrun_display }}</p>
+                                 <p class="text-sm text-blue-800">{{ alert.diagnosis }}</p>
+                                <p class="text-xs font-bold text-red-700">Raised at: {{ alert.timestamp }}</p>
+                            </div>
+                        {% elif alert.detection == 'both' %}
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <p class="text-sm text-red-600">Coccidiosis</p>
+                                <p class="text-2xl font-bold text-red-700">{{ alert.probability }}%</p>
+                                <p class="text-sm text-gray-600">Detected via: {{ alert.detection_method }}</p>
+                                <p class="text-xs text-gray-500">Fowl Run: {{ alert.get_fowlrun_display }}</p>
+                                <p class="text-sm text-blue-800">{{ alert.diagnosis }}</p>
+                                 <p class="text-xs font-bold text-red-700">Raised at: {{ alert.timestamp }}</p>
+                            </div>
+                            <div class="bg-orange-50 p-4 rounded-lg">
+                                <p class="text-sm text-orange-600">Newcastle Disease</p>
+                                <p class="text-2xl font-bold text-orange-700">{{ alert.probability }}%</p>
+                                <p class="text-sm text-gray-600">Detected via: {{ alert.detection_method }}</p>
+                                <p class="text-xs text-gray-500">Fowl Run: {{ alert.get_fowlrun_display }}</p>
+                                 <p class="text-sm text-blue-800">{{ alert.diagnosis }}</p>
+                                  <p class="text-xs font-bold text-red-700">Raised at: {{ alert.timestamp }}</p>
+                            </div>
+                        {% endif %}
+                    
+               {% else%}
+                    <div class="bg-green-50 p-4 rounded-lg flex items-center space-x-2 col-span-2">
+                        <span class="text-green-600 text-xl">✓</span>
+                        <h3 class="text-lg font-semibold text-gray-800">No Disease Detected</h3>
+                        <p class="text-sm text-blue-800">{{ alert.diagnosis }}</p>
+                    </div>
+                {% endif %}
+                
+              
+            </div>
+        </div>
+    </div>
+
+   <div class="bg-white rounded-lg shadow">
+    <div class="p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Alerts</h3>
+        <div class="space-y-4">
+            {% for alert in recent_alerts %}
+                {% if alert.is_health == False %}
+                    <div class="border-l-4 
+                        {% if alert.detection == 'cocci' or alert.detection == 'uncertain_cocci' %}
+                            border-red-500 bg-red-50
+                        {% elif alert.detection == 'ncd' or alert.detection == 'uncertain_ncd' %}
+                            border-orange-500 bg-orange-50
+                        {% else %}
+                            border-purple-500 bg-purple-50
+                        {% endif %}
+                        p-4 rounded-r-lg">
+                        
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-semibold 
+                                    {% if alert.detection == 'cocci' or alert.detection == 'uncertain_cocci' %}
+                                        text-red-800
+                                    {% elif alert.detection == 'ncd' or alert.detection == 'uncertain_ncd' %}
+                                        text-orange-800
+                                    {% else %}
+                                        text-purple-800
+                                    {% endif %}">
+                                    
+                                    {% if alert.detection == 'cocci' %}
+                                        Coccidiosis Detected
+                                    {% elif alert.detection == 'ncd' %}
+                                        Newcastle Disease Detected
+                                    {% elif alert.detection == 'uncertain_ncd' %}
+                                        Uncertain Newcastle Disease
+                                    {% elif alert.detection == 'uncertain_cocci' %}
+                                        Uncertain Coccidiosis
+                                    {% else %}
+                                        Multiple Diseases Detected
+                                    {% endif %}
+                                </h4>
+                                
+                                <p class="text-sm text-gray-600 mt-1">
+                                    {% if alert.detection == 'both' %}
+                                        Coccidiosis ({{ alert.probability }}%) and Newcastle Disease ({{ alert.probability }}%)
+                                    {% elif alert.detection %}
+                                        Probability: {{ alert.probability }}%
+                                    {% endif %}
+                                </p>
+                                
+                                <div class="mt-2 flex items-center space-x-2">
+                                    <span class="text-xs text-gray-500">Detection Method: {{ alert.get_detection_method_display }}</span>
+                                    <span class="text-xs text-gray-500">•</span>
+                                    <span class="text-xs text-gray-500">Fowl Run: {{ alert.get_fowlrun_display }}</span>
+                                </div>
+                            </div>
+                            <span class="text-sm text-gray-500">{{ alert.timestamp|date:"F j, Y, g:i a" }}</span>
+                        </div>
+
+                        <div class="mt-3">
+                            <a href="{% url 'recommendations' %}" class="text-sm font-medium 
+                                {% if alert.detection == 'cocci' or alert.detection == 'uncertain_cocci' %}
+                                    text-red-600 hover:text-red-800
+                                {% elif alert.detection == 'ncd' or alert.detection == 'uncertain_ncd' %}
+                                    text-orange-600 hover:text-orange-800
+                                {% else %}
+                                    text-purple-600 hover:text-purple-800
+                                {% endif %}">
+                                View Recommendations →
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-gray-600">No recent alerts found.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+</div>
+{% endblock %}

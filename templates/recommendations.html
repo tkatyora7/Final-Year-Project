@@ -1,0 +1,278 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    @keyframes flash {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+    
+    .flash-animation {
+        animation: flash 3s infinite;
+    }
+</style>
+
+<div class="container mx-auto px-4 space-y-8">
+     {% if alert.detection == 'cocci' or "uncertain_cocci"%}
+    <!-- COCCIDIOSIS SECTION -->
+    <div class="flex items-center space-x-3 mb-6">
+        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <span class="text-red-600 text-xl">🦠</span>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800">COCCIDIOSIS MANAGEMENT</h3>
+    </div>
+
+   
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6">Coccidiosis Recommendations</h3>
+                <div class="space-y-4">
+                  
+                    <div class="bg-red-50 flash-animation rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">⚠️ Immediate Isolation Required</h4>
+                        <p class="text-sm text-gray-700">
+                            Separate suspected birds from the healthy flock immediately to prevent spread.
+                        </p>
+                        <div class="mt-3 flex items-center space-x-2">
+                            <span class="bg-red-200 text-red-800 text-xs px-2 py-1 rounded">Priority: High</span>
+                            <span class="bg-red-200 text-red-800 text-xs px-2 py-1 rounded">Implementation: Within 24 hours</span>
+                        </div>
+                    </div>
+
+                   
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">🔒 Quarantine Protocol</h4>
+                        <p class="text-sm text-gray-700">
+                            Create a quarantine area with separate feeding and watering equipment.
+                        </p>
+                        <div class="mt-3 flex items-center space-x-2">
+                            <span class="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded">Priority: Medium</span>
+                            <span class="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded">Implementation: Within 24 hours</span>
+                        </div>
+                    </div>
+
+                    {% if temperature <= 45 %}
+                    
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">🌡️ Temperature Control</h4>
+                        <p class="text-sm text-gray-700">
+                            Current Temperature: <span class="text-lg">{{temperature}}°C</span> <br>
+                             Turn On ultra-red lighting to increase temperature
+                        </p>
+                        <div class="mt-3 flex items-center space-x-2">
+                            <span class="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded">Priority: High</span>
+                            <span class="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded">Implementation: Within 24 hours</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                   
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">💊 Medical Treatment</h4>
+                        <p class="text-sm text-gray-700">
+                            Consult with a veterinarian for appropriate anticoccidial medication.
+                        </p>
+                        <div class="mt-3 flex items-center space-x-2">
+                            <span class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded">Priority: High</span>
+                            <span class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded">Implementation: Within 48 hours</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6">Identifying Affected Birds</h3>
+                <div class="space-y-4">
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">Clinical Signs</h4>
+                        <div class="space-y-2">
+                            <p class="text-sm font-medium text-gray-900">Watch for these symptoms:</p>
+                            <ul class="text-sm text-gray-700 space-y-2">
+                                <li class="flex items-center space-x-2">
+                                    <span>•</span>
+                                    <span>Bloody or reddish diarrhea</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <span>•</span>
+                                    <span>Ruffled, droopy wings</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <span>•</span>
+                                    <span>Pale comb and wattles</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <span>•</span>
+                                    <span>Huddling or depression</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">Reference Image</h4>
+                        <img 
+                            src="{{ latest_broilers.url}}" 
+                            alt="Broiler showing signs of coccidiosis"
+                            class="rounded-lg w-full object-cover"
+                        >
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif alert.detection == 'ncd' or "uncertain_ncd" %}
+    <div class="flex items-center space-x-3 mb-6">
+        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <span class="text-red-600 text-xl">🦠</span>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800">NEW CASTLE MANAGEMENT</h3>
+    </div>
+
+   
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6">Coccidiosis Recommendations</h3>
+                <div class="space-y-4">
+                  
+                    <div class="bg-red-50 flash-animation rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">⚠️ Immediate Isolation Required</h4>
+                        <p class="text-sm text-gray-700">
+                            Separate suspected birds from the healthy flock immediately to prevent spread.
+                        </p>
+                        <div class="mt-3 flex items-center space-x-2">
+                            <span class="bg-red-200 text-red-800 text-xs px-2 py-1 rounded">Priority: High</span>
+                            <span class="bg-red-200 text-red-800 text-xs px-2 py-1 rounded">Implementation: Within 24 hours</span>
+                        </div>
+                    </div>
+
+                   
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">🔒 Quarantine Protocol</h4>
+                        <p class="text-sm text-gray-700">
+                            Create a quarantine area with separate feeding and watering equipment.
+                        </p>
+                        <div class="mt-3 flex items-center space-x-2">
+                            <span class="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded">Priority: Medium</span>
+                            <span class="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded">Implementation: Within 24 hours</span>
+                        </div>
+                    </div>
+
+                    {% if temperature <= 45 %}
+                    
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">🌡️ Temperature Control</h4>
+                        <p class="text-sm text-gray-700">
+                            Current Temperature: <span class="text-lg">{{temperature}}°C</span> <br>
+                             Turn On ultra-red lighting to increase temperature
+                        </p>
+                        <div class="mt-3 flex items-center space-x-2">
+                            <span class="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded">Priority: High</span>
+                            <span class="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded">Implementation: Within 24 hours</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                   
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">💊 Medical Treatment</h4>
+                        <p class="text-sm text-gray-700">
+                            Consult with a veterinarian for appropriate anticoccidial medication.
+                        </p>
+                        <div class="mt-3 flex items-center space-x-2">
+                            <span class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded">Priority: High</span>
+                            <span class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded">Implementation: Within 48 hours</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6">Identifying Affected Birds</h3>
+                <div class="space-y-4">
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">Clinical Signs</h4>
+                        <div class="space-y-2">
+                            <p class="text-sm font-medium text-gray-900">Watch for these symptoms:</p>
+                            <ul class="text-sm text-gray-700 space-y-2">
+                                <li class="flex items-center space-x-2">
+                                    <span>•</span>
+                                    <span>Bloody or reddish diarrhea</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <span>•</span>
+                                    <span>Ruffled, droopy wings</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <span>•</span>
+                                    <span>Pale comb and wattles</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <span>•</span>
+                                    <span>Huddling or depression</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">Reference Image</h4>
+                        <img 
+                            src="{{ latest_broilers.url}}" 
+                            alt="Broiler showing signs of coccidiosis"
+                            class="rounded-lg w-full object-cover"
+                        >
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center space-x-3 mb-6">
+            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <span class="text-green-600 text-xl">✓</span>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800"> Healthy Status: No Coccidiosis Detected</h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-800 mb-2">🧹 Daily Cleaning</h4>
+                <p class="text-sm text-gray-700">Maintain clean and dry litter. Remove wet spots immediately.</p>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-800 mb-2">💧 Water Management</h4>
+                <p class="text-sm text-gray-700">Clean water containers daily and prevent spillage.</p>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-800 mb-2">🧼 Biosecurity</h4>
+                <p class="text-sm text-gray-700">Control visitor access </p>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-800 mb-2">🏠 House Keeping</h4>
+                <p class="text-sm text-gray-700">Ensure proper ventilation and  Use quality feed</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+   
+</div>
+{% endblock %}

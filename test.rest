@@ -1,0 +1,15 @@
+POST http://paulkys.local:8000/esp32-connect/audio/analysis/
+Content-Type: application/json
+
+
+
+{   
+    "temperature": 28.5,
+    "humidity": 60.2,
+    "fowlrun": "1",
+    "sound_count": 55,
+    "sound_status": "normal",
+    "risk_level": "low",
+    "prolong_silence": false
+}
+

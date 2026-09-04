@@ -1,0 +1,115 @@
+{% include 'styles.html'%}
+{% load static%}
+<!DOCTYPE html>
+<html lang="en">
+    <body>
+        <div class="min-h-screen bg-gray-100">
+            <aside class="fixed inset-y-0 left-0 w-64 bg-blue-600 text-white">
+                <div class="p-4">
+                    <h2 class="text-xl mb-3 font-bold">Farmer Dashboard</h2> 
+                    <p>Welcome {{user.username}}  {{user.last_name}}</p>
+                </div>
+            
+                <nav class="mt-6 space-y-2">
+                    <a href="{% url 'dashboard'%}" class="px-4 py-3 hover:bg-blue-700 flex items-center">
+                        <span class="mr-3">📊</span> Dashboard
+                    </a>
+                    <a href="{% url 'camera_feed'%}" class=" px-4 py-3 hover:bg-blue-700 flex items-center">
+                        <span class="mr-3">📷</span> Camera Feed
+                    </a>
+                    <a href="{%url 'audio_feed'%}" class=" px-4 py-3 hover:bg-blue-700 flex items-center">
+                        <span class="mr-3">🎤</span> Audio Feed
+                    </a>
+                    <a href="{% url 'alerts'%}" class=" px-4 py-3 hover:bg-blue-700 flex items-center">
+                        <span class="mr-3">⚠️</span> Alerts
+                    </a>
+                    <a href="{%url 'recommendations'%}" class="px-4 py-3 hover:bg-blue-700 flex items-center">
+                        <span class="mr-3 text-yellow-400">💡</span>Recommendations
+                    </a>
+                    <a href="{%url 'farmer_hub'%}" class="px-4 py-3 hover:bg-blue-700 flex items-center">
+                        <span class="mr-3 text-yellow-400">💡</span>Farmer HUB
+                    </a>  
+                </nav>
+            </aside>
+            
+            <div class="ml-64">
+                <header class="bg-white shadow">
+    <div class="px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center">
+           
+           
+<div class="flex space-x-4">
+    <!-- ESP32 Status -->
+    <div class="flex items-center">
+        <div class="relative">
+            <span class="inline-block h-3 w-3 rounded-full {% if esp32_online %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+            <span class="{% if esp32_online %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %} ml-2 text-xs font-medium px-2 py-0.5 rounded">
+                ESP32: {% if esp32_online %}Online{% else %}Offline{% endif %}
+                <span class="text-gray-600 ml-3 mr-4">Last ping: {{ last_ping|date }} 
+                    {{ last_ping|date:"H:i:s" }}
+                </span>
+            </span>
+        </div>
+    </div>
+    
+    <!-- ESP32 CAM Status -->
+    <div class="flex items-center">
+        <div class="relative">
+            <span class="inline-block h-3 w-3 rounded-full {% if esp32_cam_online %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+            <span class="{% if esp32_cam_online %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %} ml-2 text-xs font-medium px-2 py-0.5 rounded">
+                ESP32 CAM: {% if esp32_cam_online %}Online{% else %}Offline{% endif %}
+                <span class="text-gray-600 ml-3">Last ping: {{ esp32_cam_last_ping|date }} {{ esp32_cam_last_ping|date:"H:i:s" }}</span>
+            </span>
+        </div>
+    </div>
+</div>
+        </div>
+        
+        <div class="flex items-center">
+            {% for message in messages %}
+                {% if message.tags == 'success' %}
+                <div class="flex items-center p-4 mb-0 rounded-lg border bg-green-50 border-green-200">
+                    <div class="flex-shrink-0"> 
+                        <svg class="w-4 h-4 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="font-medium text-green-700">{{ message }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                {% if message.tags == 'warning' %}
+                <div class="flex items-center p-4 mb-0 rounded-lg border bg-red-50 border-red-200">
+                    <div class="flex-shrink-0"> 
+                        <svg class="w-4 h-4 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="font-medium text-red-700">{{ message }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+            
+            <form method="post" action="{% url 'logout'%}" class="flex items-center space-x-3 ml-4">
+                {% csrf_token %}
+                <span class="font-medium text-gray-700">{{ user.email }}</span> |
+                <button type="submit" class="hover:bg-gray-100 hover:text-indigo-600">
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+                <main class="p-6">
+                    {% block content%}
+    
+                    {%endblock content%}
+                </main>
+            </div>
+        </div>
+    </body>
+</html>
+   

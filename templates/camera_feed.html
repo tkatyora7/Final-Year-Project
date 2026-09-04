@@ -1,0 +1,100 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Image <span class="text-blue-600">
+               ( {% if latest.health_status == "ncd" %}
+                New Castle
+                {% elif latest.health_status == "cocci" %}
+                Coccidiosis
+                {% elif latest.health_status == "others" %}
+               Not A Broiler dropping
+               {% elif latest.health_status == "health" %}
+                Healthy
+                {%else%}
+               {{latest.health_status}}
+                {%endif%})
+            </span>
+            </h3>
+            <div class="relative cursor-pointer group">
+                <img src="{{ latest.image.url}}"
+                    alt="Broiler image"
+                    class="w-full h-36 object-cover rounded-lg transition-transform duration-200"
+                />
+                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">
+                    Recorded at: {{ latest.timestamp }}
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Selected Image <span class="text-blue-600">
+            
+            </span>
+
+            </h3> <br>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <span id="selectedImageTime"></span>
+            </h3>
+            <div class="h-40 bg-gray-50 rounded-lg flex items-center justify-center">
+                <img id="selectedImage" 
+                    src="" 
+                    alt="Selected image"
+                    class="h-36 w-full object-cover rounded-lg hidden"
+                />
+              
+            </div>
+        </div>
+    </div>
+
+
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4"> Live Camera Feed for FowlRun 1  ({{broiler_count}} Images)
+                <hr/></h3>
+            <div class="mt-6 bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4"></h3>
+                
+                {% if broiler_count > 0 %}
+                <p class="text-center text-gray-500 italic font-medium mt-4 mb-8">
+                   
+                </p>
+                {% elif broiler_count == 0 %}
+                <p class="text-center text-gray-500 italic font-medium mt-4">
+                    No Camera Feed at the moment
+                </p>
+                {% endif %}
+
+                <div class="grid grid-cols-5 gap-4">
+                    {% for image in broiler %}
+                    <div class="relative cursor-pointer group" onclick="selectImage('{{ image.url }}', '{{ image.timestamp }}')">
+                        <img src="{{ image.url}}"
+                            alt="Broiler image {{ forloop.counter }}"
+                            class="w-full h-32 object-cover rounded-lg transition-transform duration-200 hover:scale-105"
+                        />
+                        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">
+                            Recorded at: {{ image.timestamp }} - dis:  {{ image.health_status }} 
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectImage(url, timestamp) {
+
+    const selectedImage = document.getElementById('selectedImage');
+    const selectedImageTime = document.getElementById('selectedImageTime');
+    
+    selectedImage.src = url;
+    selectedImage.classList.remove('hidden');
+    selectedImageTime.textContent = `Recorded at: ${timestamp}`;
+}
+</script>
+{% endblock %}

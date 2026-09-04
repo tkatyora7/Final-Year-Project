@@ -1,0 +1,10 @@
+POST http://127.0.0.1:8000/esp32-connect/fowlrun-conditions/ HTTP/1.1
+Content-Type: application/json
+
+{
+    "secret_key":"xytm56shjn",
+    "temperature": 40,
+    "humidity": 85,
+    "fowlrun": "1"
+}
+
